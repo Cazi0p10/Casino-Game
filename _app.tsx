@@ -9,19 +9,14 @@ import Header from "@/components/layout/Header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 
-import {
-  ConnectionProvider,
-  WalletProvider
-} from "@solana/wallet-adapter-react";
+import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import {
-  PhantomWalletAdapter,
-  SolflareWalletAdapter
-} from "@solana/wallet-adapter-wallets";
+import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
+import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { PublicKey } from "@solana/web3.js";
 
 import { GambaProvider, SendTransactionProvider } from "gamba-react-v2";
-import { GambaPlatformProvider, TokenMetaProvider } from "gamba-react-ui-v2";
+import { GambaPlatformProvider } from "gamba-react-ui-v2";
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
 
@@ -43,9 +38,7 @@ function MyApp({ Component, pageProps }: AppProps) {
     process.env.NEXT_PUBLIC_RPC_ENDPOINT ?? "https://api.mainnet-beta.solana.com";
 
   if (!process.env.NEXT_PUBLIC_PLATFORM_CREATOR) {
-    throw new Error(
-      "NEXT_PUBLIC_PLATFORM_CREATOR environment variable is not set"
-    );
+    throw new Error("NEXT_PUBLIC_PLATFORM_CREATOR environment variable is not set");
   }
 
   const PLATFORM_CREATOR_ADDRESS = new PublicKey(
@@ -54,7 +47,10 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   // Définition des wallets disponibles
   const wallets = useMemo(
-    () => [new PhantomWalletAdapter(), new SolflareWalletAdapter({ network: "mainnet-beta" })],
+    () => [
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter({ network: WalletAdapterNetwork.Mainnet })
+    ],
     []
   );
 
@@ -79,6 +75,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                     </main>
                     <Footer />
                     <Toaster position="bottom-right" richColors />
+                    {LIVE_EVENT_TOAST && null}
                   </GambaPlatformProvider>
                 </GambaProvider>
               </SendTransactionProvider>
@@ -91,3 +88,4 @@ function MyApp({ Component, pageProps }: AppProps) {
 }
 
 export default MyApp;
+
