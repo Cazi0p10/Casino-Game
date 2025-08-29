@@ -2,41 +2,36 @@
 import "@/styles/globals.css";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
-import {
-  BASE_SEO_CONFIG,
-  LIVE_EVENT_TOAST,
-  PLATFORM_CREATOR_FEE,
-  PLATFORM_JACKPOT_FEE,
-  PLATFORM_REFERRAL_FEE,
-  TOKENLIST,
-} from "../constants";
-
-import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
-import { GambaProvider, SendTransactionProvider } from "gamba-react-v2";
-
 import { AppProps } from "next/app";
 import { DefaultSeo } from "next-seo";
 import Footer from "@/components/layout/Footer";
-import { GambaPlatformProvider } from "gamba-react-ui-v2";
-import GameToast from "@/hooks/useGameEvent";
 import Header from "@/components/layout/Header";
-import { PublicKey } from "@solana/web3.js";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
-import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import dynamic from "next/dynamic";
-import { useDisclaimer } from "@/hooks/useDisclaimer";
-import { useMemo } from "react";
-import { useUserStore } from "@/hooks/useUserStore";
 
 import {
+  ConnectionProvider,
+  WalletProvider
+} from "@solana/wallet-adapter-react";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import {
   PhantomWalletAdapter,
-  SolflareWalletAdapter,
-  SlopeWalletAdapter,
-  TorusWalletAdapter,
-  TrustWalletAdapter,
-  TonWalletAdapter
+  SolflareWalletAdapter
 } from "@solana/wallet-adapter-wallets";
+import { PublicKey } from "@solana/web3.js";
+
+import { GambaProvider, SendTransactionProvider } from "gamba-react-v2";
+import { GambaPlatformProvider, TokenMetaProvider } from "gamba-react-ui-v2";
+import dynamic from "next/dynamic";
+import { useMemo } from "react";
+
+// Valeurs par défaut pour éviter les erreurs
+const BASE_SEO_CONFIG = {};
+const LIVE_EVENT_TOAST = false;
+const PLATFORM_CREATOR_FEE = 0;
+const PLATFORM_JACKPOT_FEE = 0;
+const PLATFORM_REFERRAL_FEE = 0;
+const TOKENLIST: any[] = [];
 
 const DynamicTokenMetaProvider = dynamic(
   () => import("gamba-react-ui-v2").then((mod) => mod.TokenMetaProvider),
@@ -44,17 +39,8 @@ const DynamicTokenMetaProvider = dynamic(
 );
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const { showDisclaimer, DisclaimerModal } = useDisclaimer();
-  const { isPriorityFeeEnabled, priorityFee } = useUserStore((state) => ({
-    isPriorityFeeEnabled: state.isPriorityFeeEnabled,
-    priorityFee: state.priorityFee
-  }));
-
-  const sendTransactionConfig = isPriorityFeeEnabled ? { priorityFee } : {};
-
   const RPC_ENDPOINT =
-    process.env.NEXT_PUBLIC_RPC_ENDPOINT ??
-    "https://api.mainnet-beta.solana.com";
+    process.env.NEXT_PUBLIC_RPC_ENDPOINT ?? "https://api.mainnet-beta.solana.com";
 
   if (!process.env.NEXT_PUBLIC_PLATFORM_CREATOR) {
     throw new Error(
@@ -66,42 +52,25 @@ function MyApp({ Component, pageProps }: AppProps) {
     process.env.NEXT_PUBLIC_PLATFORM_CREATOR as string
   );
 
+  // Définition des wallets disponibles
   const wallets = useMemo(
-    () => [
-      new PhantomWalletAdapter(),
-      new SolflareWalletAdapter({ network: "mainnet-beta" }),
-      new SlopeWalletAdapter(),
-      new TorusWalletAdapter(),
-      new TrustWalletAdapter(),
-      new TonWalletAdapter()
-    ],
+    () => [new PhantomWalletAdapter(), new SolflareWalletAdapter({ network: "mainnet-beta" })],
     []
   );
 
   return (
-    <ConnectionProvider
-      endpoint={RPC_ENDPOINT}
-      config={{ commitment: "processed" }}
-    >
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
+    <ConnectionProvider endpoint={RPC_ENDPOINT} config={{ commitment: "processed" }}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <WalletProvider autoConnect wallets={wallets}>
           <WalletModalProvider>
             <DynamicTokenMetaProvider tokens={TOKENLIST}>
-              <SendTransactionProvider {...sendTransactionConfig}>
+              <SendTransactionProvider>
                 <GambaProvider>
                   <GambaPlatformProvider
                     creator={PLATFORM_CREATOR_ADDRESS}
                     defaultCreatorFee={PLATFORM_CREATOR_FEE}
                     defaultJackpotFee={PLATFORM_JACKPOT_FEE}
-                    referral={{
-                      fee: PLATFORM_REFERRAL_FEE,
-                      prefix: "code",
-                    }}
+                    referral={{ fee: PLATFORM_REFERRAL_FEE, prefix: "code" }}
                   >
                     <Header />
                     <DefaultSeo {...BASE_SEO_CONFIG} />
@@ -109,18 +78,7 @@ function MyApp({ Component, pageProps }: AppProps) {
                       <Component {...pageProps} />
                     </main>
                     <Footer />
-                    <Toaster
-                      position="bottom-right"
-                      richColors
-                      toastOptions={{
-                        style: {
-                          backgroundImage:
-                            "linear-gradient(to bottom right, #1e3a8a, #6b21a8)",
-                        },
-                      }}
-                    />
-                    {LIVE_EVENT_TOAST && <GameToast />}
-                    {showDisclaimer && <DisclaimerModal />}
+                    <Toaster position="bottom-right" richColors />
                   </GambaPlatformProvider>
                 </GambaProvider>
               </SendTransactionProvider>
@@ -133,3 +91,4 @@ function MyApp({ Component, pageProps }: AppProps) {
 }
 
 export default MyApp;
+
